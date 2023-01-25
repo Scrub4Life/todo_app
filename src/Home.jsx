@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer } from "react";
+import React, { useCallback, useReducer, useEffect  } from "react";
 import sunIcon from "./images/icon-sun.svg";
 
 const initialState = {
@@ -55,28 +55,28 @@ const reducer = (state, action) => {
         displayedItems: [...state.items],
         displayAll: true,
       };
-    case "HANDLE_CHECK":
-      let updatedCheckedItems = [...state.checkedItems];
-      let updatedCompletedItems = [...state.completedItems];
-      if (action.payload.checked) {
-        updatedCheckedItems.push(action.payload.index);
-        updatedCompletedItems.push(action.payload.index);
-      } else {
-        updatedCheckedItems.splice(
-          updatedCheckedItems.indexOf(action.payload.index),
-          1
-        );
-        updatedCompletedItems.splice(
-          updatedCompletedItems.indexOf(action.payload.index),
-          1
-        );
-      }
-      return {
-        ...state,
-        checkedItems: updatedCheckedItems,
-        completedItems: updatedCompletedItems,
-        displayedItems: state.displayAll ? state.items : state.displayedItems,
-      };
+      case "HANDLE_CHECK":
+        let updatedCheckedItems = [...state.checkedItems];
+        let updatedCompletedItems = [...state.completedItems];
+        if (action.payload.checked) {
+          updatedCheckedItems.push(action.payload.index);
+          updatedCompletedItems.push(action.payload.index);
+        } else {
+          updatedCheckedItems.splice(
+            updatedCheckedItems.indexOf(action.payload.index),
+            1
+          );
+          updatedCompletedItems.splice(
+            updatedCompletedItems.indexOf(action.payload.index),
+            1
+          );
+        }
+        return {
+          ...state,
+          checkedItems: action.payload.checkedItems,
+        completedItems: action.payload.completedItems,
+          displayedItems: state.displayAll ? state.items : state.items.filter((item, index) => updatedCompletedItems.includes(index)),
+        };
     case "HANDLE_CHANGE":
       return {
         ...state,
@@ -87,7 +87,7 @@ const reducer = (state, action) => {
         ...state,
         completedItems: action.payload,
       };
-    case "CLEAR_CHECKED":
+      case "CLEAR_CHECKED":
       const newCompletedItems = completedItems.filter(
         (item) => !action.payload.includes(state.items[item])
       );
@@ -96,9 +96,9 @@ const reducer = (state, action) => {
         ...state,
         items: action.payload,
         displayedItems: action.payload,
-        checkedItems: [],
+        checkedItems: checkedItems.filter((item) => !action.payload.includes(state.items[item])),
+        completedItems: newCompletedItems
       };
-
     default:
       return state;
   }
@@ -106,14 +106,56 @@ const reducer = (state, action) => {
 
 const Home = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { items, input, checkedItems, displayedItems, displayAll } = state;
+  const { items, input, checkedItems, displayedItems, displayAll, completedItems } = state;
+
+  // useEffect(() => {
+  //   if (items !== displayedItems) {
+  //       dispatch({ type: 'DISPLAY_ALL' });
+  //   }
+  // }, [items, displayedItems, dispatch]);
+
+  useEffect(() => {
+    const itemsElements = document.getElementsByClassName("item");
+    for (let i = 0; i < itemsElements.length; i++) {
+      if (checkedItems.includes(i) && completedItems.includes(i)) {
+        itemsElements[i].classList.add("checked-completed");
+      } else {
+        itemsElements[i].classList.remove("checked-completed");
+      }
+    }
+  }, [checkedItems, completedItems]);
+  
+
+  useEffect(() => {
+    const checkboxElements = document.getElementsByClassName("checkbox");
+    for (let i = 0; i < checkboxElements.length; i++) {
+      if (checkedItems.includes(i)) {
+        checkboxElements[i].checked = true;
+      } else {
+        checkboxElements[i].checked = false;
+      }
+    }
+  }, [checkedItems]);
+  
+  
 
   const handleCheckboxChange = (e, index) => {
-    dispatch({
-      type: "HANDLE_CHECK",
-      payload: { checked: e.target.checked, index },
-    });
+    if (e.target.checked) {
+      dispatch({
+        type: "HANDLE_CHECK",
+        payload: { checkedItems: [...checkedItems, index], completedItems: [...completedItems, index] }
+      });
+    } else {
+      dispatch({
+        type: "HANDLE_CHECK",
+        payload: {
+          checkedItems: checkedItems.filter((item) => item !== index),
+          completedItems: completedItems.filter((item) => item !== index)
+        }
+      });
+    }
   };
+
 
   const filterCheckedItems = () => {
     dispatch({ type: "FILTER_CHECKED" });
@@ -137,12 +179,14 @@ const Home = () => {
     }
   };
 
-  const handleRemoveItem = useCallback(
-    (index) => {
-      dispatch({ type: "REMOVE_ITEM", payload: index });
-    },
-    [dispatch]
-  );
+  const handleRemoveItem = (index) => {
+    dispatch({
+      type: "REMOVE_ITEM",
+      payload: index,
+      checkedItems: checkedItems.filter((item) => item !== index),
+      completedItems: completedItems.filter((item) => item !== index)
+    });
+  };
 
   const handleClearChecked = () => {
     const newItems = items.filter(
@@ -154,6 +198,7 @@ const Home = () => {
   const handleClearCompleted = (completedItems, newCompletedItems) => {
     dispatch({ type: "CLEAR_COMPLETED", payload: newCompletedItems });
   };
+ 
 
   return (
     <div className="w-1/3 m-auto flex flex-col">
@@ -184,12 +229,12 @@ const Home = () => {
                 key={index}
                 className={`flex border-b-2 border-b-white py-3 todo-item ${
                   state.completedItems.includes(index) ? "line-through" : ""
-                }`}
+                } item ${completedItems.includes(index) ? "completed" : ""} ${checkedItems.includes(index) && completedItems.includes(index) ? "checked-completed" : ""} `}
               >
                 <input
                   type="checkbox"
+                  onChange={(e) => handleCheckboxChange(e, index)} 
                   checked={state.checkedItems.includes(index)}
-                  onChange={(e) => handleCheckboxChange(e, index)}
                   className="mr-3 rounded-full ml-3"
                 />
                 <label
