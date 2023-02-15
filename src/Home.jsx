@@ -1,11 +1,9 @@
-import React, { useCallback } from "react";
-import { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import sunIcon from "./images/icon-sun.svg";
 
 const Home = () => {
   // usestates
   const [items, setItems] = useState([]);
-
   const [input, setInput] = useState("");
   const [checkedItems, setCheckedItems] = useState([]);
   const [displayedItems, setDisplayedItems] = useState(items);
@@ -19,16 +17,23 @@ const Home = () => {
       updatedCheckedItems.splice(updatedCheckedItems.indexOf(index), 1);
     }
     setCheckedItems(updatedCheckedItems);
+
+    if (displayAll) {
+      setDisplayedItems(items);
+    } else {
+      setDisplayedItems(
+        items.filter((item, index) => checkedItems.includes(index))
+      );
+    }
+  };
+
+  // all button
+  const displayAllItems = () => {
     setDisplayedItems(items);
+    setDisplayAll(true);
   };
 
-  const filterCheckedItems = () => {
-    setDisplayedItems(
-      items.filter((item, index) => checkedItems.includes(index))
-    );
-    setDisplayAll(false);
-  };
-
+  // active button
   const filterUncheckedItems = () => {
     setDisplayedItems(
       items.filter((item, index) => !checkedItems.includes(index))
@@ -36,10 +41,23 @@ const Home = () => {
     setDisplayAll(false);
   };
 
-  const displayAllItems = () => {
-    setDisplayedItems(items);
-    setDisplayAll(true);
+  //  completed button
+  const filterCheckedItems = () => {
+    setDisplayedItems(
+      items.filter((item, index) => checkedItems.includes(index))
+    );
+    setDisplayAll(false);
   };
+
+  // remove individual item function
+  const handleRemoveItem = useCallback(
+    (index) => {
+      const newList = [...items];
+      newList.splice(index, 1);
+      setItems(newList);
+    },
+    [items]
+  );
 
   const handleChange = (event) => {
     setInput(event.target.value);
@@ -54,15 +72,16 @@ const Home = () => {
     }
   };
 
-  // remove item function
-  const handleRemoveItem = useCallback(
-    (index) => {
-      const newList = [...items];
-      newList.splice(index, 1);
-      setItems(newList);
-    },
-    [items]
-  );
+  // useEffect
+  useEffect(() => {
+    if (displayAll) {
+      setDisplayedItems(items);
+    } else {
+      setDisplayedItems(
+        items.filter((item, index) => checkedItems.includes(index))
+      );
+    }
+  }, [items, checkedItems, displayAll]);
 
   return (
     <div className="w-1/3 m-auto flex flex-col">
@@ -95,7 +114,7 @@ const Home = () => {
         {/* displaying the todo list */}
         <div className="">
           <ul className="">
-            {items.map((item, index) => (
+            {displayedItems.map((item, index) => (
               <li key={item} className="flex border-b-2 border-b-white py-3">
                 {/* checkbox */}
                 <input
@@ -107,11 +126,9 @@ const Home = () => {
                 />
                 <label
                   className={`text ${
-                    checkedItems.includes(index) && !displayAll
-                      ? "line-through"
-                      : ""
+                    checkedItems.includes(index) ? "line-through" : ""
                   }`}
-                  for={`checkbox-${index}`}
+                  htmlFor={`checkbox-${index}`}
                 >
                   {item}
                 </label>
@@ -126,7 +143,7 @@ const Home = () => {
             ))}
           </ul>
           <div className="flex justify-between mx-3 my-2">
-            <div className="">{items.length} items left</div>
+            <div className="">{displayedItems.length} items left</div>
             <div className="">
               <button className="mx-2 ml-0" onClick={displayAllItems}>
                 All
