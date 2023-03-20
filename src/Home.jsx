@@ -2,14 +2,20 @@ import React, { useState, useEffect, useCallback } from "react";
 import sunIcon from "./images/icon-sun.svg";
 
 const Home = () => {
-  // usestates
-  const [items, setItems] = useState([]);
+  /* usestates */
+  // input box text
   const [input, setInput] = useState("");
+  // all list items
+  const [items, setItems] = useState([]);
+  // checkbox, adds items to the 'checked' items array
   const [checkedItems, setCheckedItems] = useState([]);
+  // which types of items are displayed
   const [displayedItems, setDisplayedItems] = useState(items);
+  // display all, might not be useful
   const [displayAll, setDisplayAll] = useState(true);
 
-  const handleCheckboxChange = (e, index) => {
+  //
+  const handleCheckboxChange = (e, index, id) => {
     const updatedCheckedItems = [...checkedItems];
     if (e.target.checked) {
       updatedCheckedItems.push(index);
@@ -18,19 +24,19 @@ const Home = () => {
     }
     setCheckedItems(updatedCheckedItems);
 
-    if (displayAll) {
-      setDisplayedItems(items);
-    } else {
-      setDisplayedItems(
-        items.filter((item, index) => checkedItems.includes(index))
-      );
-    }
+    // if (displayAll) {
+    //   setDisplayedItems(items);
+    // } else {
+    //   setDisplayedItems(
+    //     items.filter((item, index) => updatedCheckedItems.includes(index))
+    //   );
+    // }
   };
 
   // all button
   const displayAllItems = () => {
     setDisplayedItems(items);
-    setDisplayAll(true);
+    // setDisplayAll(true);
   };
 
   // active button
@@ -38,7 +44,7 @@ const Home = () => {
     setDisplayedItems(
       items.filter((item, index) => !checkedItems.includes(index))
     );
-    setDisplayAll(false);
+    // setDisplayAll(false);
   };
 
   //  completed button
@@ -46,7 +52,7 @@ const Home = () => {
     setDisplayedItems(
       items.filter((item, index) => checkedItems.includes(index))
     );
-    setDisplayAll(false);
+    // setDisplayAll(false);
   };
 
   // remove individual item function
@@ -59,6 +65,7 @@ const Home = () => {
     [items]
   );
 
+  // input box
   const handleChange = (event) => {
     setInput(event.target.value);
   };
@@ -69,8 +76,22 @@ const Home = () => {
     if (event.key === "Enter") {
       setItems(items.concat(input));
       setInput("");
+      // console.log(id)
     }
   };
+
+  // const handleKeyDown = (event) => {
+  //   // event.preventDefault();
+  //   const newObject = {
+  //     id: items.length,
+  //     value: input,
+  //   };
+
+  //   if (event.key === "Enter") {
+  //     setItems((prevItems) => [...prevItems, newObject]);
+  //     setInput("");
+  //   }
+  // };
 
   // useEffect
   useEffect(() => {
@@ -114,21 +135,22 @@ const Home = () => {
         {/* displaying the todo list */}
         <div className="">
           <ul className="">
-            {displayedItems.map((item, index) => (
+            {displayedItems.map((item, index, id) => (
               <li key={item} className="flex border-b-2 border-b-white py-3">
                 {/* checkbox */}
                 <input
                   type="checkbox"
-                  id={`checkbox-${index}`}
+                  id={`item-${index}`}
                   checked={checkedItems.includes(index)}
                   onChange={(e) => handleCheckboxChange(e, index)}
                   className="mr-3 rounded-full ml-3"
                 />
+                {/* list item text */}
                 <label
                   className={`text ${
                     checkedItems.includes(index) ? "line-through" : ""
                   }`}
-                  htmlFor={`checkbox-${index}`}
+                  htmlFor={`item-${index}`}
                 >
                   {item}
                 </label>
