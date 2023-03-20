@@ -1,204 +1,108 @@
-import React, { useCallback, useReducer, useEffect  } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import sunIcon from "./images/icon-sun.svg";
 
-const initialState = {
-  items: [],
-  input: "",
-  checkedItems: [],
-  completedItems: [],
-  displayedItems: [],
-  displayAll: true,
-};
-
-const reducer = (state, action) => {
-  switch (action.type) {
-    case "ADD_ITEM":
-      return {
-        ...state,
-        items: state.items.concat(action.payload),
-        displayedItems: state.items.concat(action.payload),
-        input: "",
-      };
-    case "REMOVE_ITEM":
-      return {
-        ...state,
-        items: state.items.filter((item, index) => index !== action.payload),
-        displayedItems: state.items.filter(
-          (item, index) => index !== action.payload
-        ),
-        checkedItems: state.checkedItems.filter(
-          (item) => item !== action.payload
-        ),
-      };
-    case "FILTER_CHECKED":
-      return {
-        ...state,
-        displayedItems: state.items.filter((item, index) =>
-          state.checkedItems.includes(index)
-        ),
-        displayAll: false,
-      };
-    case "FILTER_UNCHECKED":
-      return {
-        ...state,
-        displayedItems: state.items.filter(
-          (item, index) => !state.checkedItems.includes(index)
-        ),
-        checkedItems: state.checkedItems.filter(
-          (item) => !state.displayedItems.includes(state.items[item])
-        ),
-        displayAll: false,
-      };
-    case "DISPLAY_ALL":
-      return {
-        ...state,
-        displayedItems: [...state.items],
-        displayAll: true,
-      };
-      case "HANDLE_CHECK":
-        let updatedCheckedItems = [...state.checkedItems];
-        let updatedCompletedItems = [...state.completedItems];
-        if (action.payload.checked) {
-          updatedCheckedItems.push(action.payload.index);
-          updatedCompletedItems.push(action.payload.index);
-        } else {
-          updatedCheckedItems.splice(
-            updatedCheckedItems.indexOf(action.payload.index),
-            1
-          );
-          updatedCompletedItems.splice(
-            updatedCompletedItems.indexOf(action.payload.index),
-            1
-          );
-        }
-        return {
-          ...state,
-          checkedItems: action.payload.checkedItems,
-        completedItems: action.payload.completedItems,
-          displayedItems: state.displayAll ? state.items : state.items.filter((item, index) => updatedCompletedItems.includes(index)),
-        };
-    case "HANDLE_CHANGE":
-      return {
-        ...state,
-        input: action.payload,
-      };
-    case "CLEAR_COMPLETED":
-      return {
-        ...state,
-        completedItems: action.payload,
-      };
-      case "CLEAR_CHECKED":
-      const newCompletedItems = completedItems.filter(
-        (item) => !action.payload.includes(state.items[item])
-      );
-      handleClearCompleted(completedItems, newCompletedItems);
-      return {
-        ...state,
-        items: action.payload,
-        displayedItems: action.payload,
-        checkedItems: checkedItems.filter((item) => !action.payload.includes(state.items[item])),
-        completedItems: newCompletedItems
-      };
-    default:
-      return state;
-  }
-};
-
 const Home = () => {
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const { items, input, checkedItems, displayedItems, displayAll, completedItems } = state;
+  /* usestates */
+  // input box text
+  const [input, setInput] = useState("");
+  // all list items
+  const [items, setItems] = useState([]);
+  // checkbox, adds items to the 'checked' items array
+  const [checkedItems, setCheckedItems] = useState([]);
+  // which types of items are displayed
+  const [displayedItems, setDisplayedItems] = useState(items);
+  // display all, might not be useful
+  const [displayAll, setDisplayAll] = useState(true);
 
-  // useEffect(() => {
-  //   if (items !== displayedItems) {
-  //       dispatch({ type: 'DISPLAY_ALL' });
-  //   }
-  // }, [items, displayedItems, dispatch]);
-
-  useEffect(() => {
-    const itemsElements = document.getElementsByClassName("item");
-    for (let i = 0; i < itemsElements.length; i++) {
-      if (checkedItems.includes(i) && completedItems.includes(i)) {
-        itemsElements[i].classList.add("checked-completed");
-      } else {
-        itemsElements[i].classList.remove("checked-completed");
-      }
-    }
-  }, [checkedItems, completedItems]);
-  
-
-  useEffect(() => {
-    const checkboxElements = document.getElementsByClassName("checkbox");
-    for (let i = 0; i < checkboxElements.length; i++) {
-      if (checkedItems.includes(i)) {
-        checkboxElements[i].checked = true;
-      } else {
-        checkboxElements[i].checked = false;
-      }
-    }
-  }, [checkedItems]);
-  
-  
-
-  const handleCheckboxChange = (e, index) => {
+  //
+  const handleCheckboxChange = (e, index, id) => {
+    const updatedCheckedItems = [...checkedItems];
     if (e.target.checked) {
-      dispatch({
-        type: "HANDLE_CHECK",
-        payload: { checkedItems: [...checkedItems, index], completedItems: [...completedItems, index] }
-      });
+      updatedCheckedItems.push(index);
     } else {
-      dispatch({
-        type: "HANDLE_CHECK",
-        payload: {
-          checkedItems: checkedItems.filter((item) => item !== index),
-          completedItems: completedItems.filter((item) => item !== index)
-        }
-      });
+      updatedCheckedItems.splice(updatedCheckedItems.indexOf(index), 1);
     }
+    setCheckedItems(updatedCheckedItems);
+
+    // if (displayAll) {
+    //   setDisplayedItems(items);
+    // } else {
+    //   setDisplayedItems(
+    //     items.filter((item, index) => updatedCheckedItems.includes(index))
+    //   );
+    // }
   };
 
-
-  const filterCheckedItems = () => {
-    dispatch({ type: "FILTER_CHECKED" });
-  };
-
-  const filterUncheckedItems = () => {
-    dispatch({ type: "FILTER_UNCHECKED" });
-  };
-
+  // all button
   const displayAllItems = () => {
-    dispatch({ type: "DISPLAY_ALL" });
+    setDisplayedItems(items);
+    // setDisplayAll(true);
   };
 
+  // active button
+  const filterUncheckedItems = () => {
+    setDisplayedItems(
+      items.filter((item, index) => !checkedItems.includes(index))
+    );
+    // setDisplayAll(false);
+  };
+
+  //  completed button
+  const filterCheckedItems = () => {
+    setDisplayedItems(
+      items.filter((item, index) => checkedItems.includes(index))
+    );
+    // setDisplayAll(false);
+  };
+
+  // remove individual item function
+  const handleRemoveItem = useCallback(
+    (index) => {
+      const newList = [...items];
+      newList.splice(index, 1);
+      setItems(newList);
+    },
+    [items]
+  );
+
+  // input box
   const handleChange = (event) => {
-    dispatch({ type: "HANDLE_CHANGE", payload: event.target.value });
+    setInput(event.target.value);
   };
 
   const handleKeyDown = (event) => {
+    // event.preventDefault();
+
     if (event.key === "Enter") {
-      dispatch({ type: "ADD_ITEM", payload: input });
+      setItems(items.concat(input));
+      setInput("");
+      // console.log(id)
     }
   };
 
-  const handleRemoveItem = (index) => {
-    dispatch({
-      type: "REMOVE_ITEM",
-      payload: index,
-      checkedItems: checkedItems.filter((item) => item !== index),
-      completedItems: completedItems.filter((item) => item !== index)
-    });
-  };
+  // const handleKeyDown = (event) => {
+  //   // event.preventDefault();
+  //   const newObject = {
+  //     id: items.length,
+  //     value: input,
+  //   };
 
-  const handleClearChecked = () => {
-    const newItems = items.filter(
-      (item, index) => !checkedItems.includes(index)
-    );
-    dispatch({ type: "CLEAR_CHECKED", payload: newItems });
-  };
+  //   if (event.key === "Enter") {
+  //     setItems((prevItems) => [...prevItems, newObject]);
+  //     setInput("");
+  //   }
+  // };
 
-  const handleClearCompleted = (completedItems, newCompletedItems) => {
-    dispatch({ type: "CLEAR_COMPLETED", payload: newCompletedItems });
-  };
- 
+  // useEffect
+  useEffect(() => {
+    if (displayAll) {
+      setDisplayedItems(items);
+    } else {
+      setDisplayedItems(
+        items.filter((item, index) => checkedItems.includes(index))
+      );
+    }
+  }, [items, checkedItems, displayAll]);
 
   return (
     <div className="w-1/3 m-auto flex flex-col">
@@ -210,9 +114,15 @@ const Home = () => {
           <img src={sunIcon} alt="sun icon" />
         </button>
       </div>
+      {/* todo list input */}
       <div className="bg-listBgColor rounded-md">
         <div>
-          <input type="checkbox" className="mx-3" />
+          <input
+            type="checkbox"
+            // name={}
+            // value={}
+            className="mx-3"
+          />
           <input
             type="text"
             value={input}
@@ -222,29 +132,29 @@ const Home = () => {
             className="m-4 ml-0"
           />
         </div>
+        {/* displaying the todo list */}
         <div className="">
-          <ul className="todo-list">
-            {displayedItems.map((item, index) => (
-              <li
-                key={index}
-                className={`flex border-b-2 border-b-white py-3 todo-item ${
-                  state.completedItems.includes(index) ? "line-through" : ""
-                } item ${completedItems.includes(index) ? "completed" : ""} ${checkedItems.includes(index) && completedItems.includes(index) ? "checked-completed" : ""} `}
-              >
+          <ul className="">
+            {displayedItems.map((item, index, id) => (
+              <li key={item} className="flex border-b-2 border-b-white py-3">
+                {/* checkbox */}
                 <input
                   type="checkbox"
-                  onChange={(e) => handleCheckboxChange(e, index)} 
-                  checked={state.checkedItems.includes(index)}
+                  id={`item-${index}`}
+                  checked={checkedItems.includes(index)}
+                  onChange={(e) => handleCheckboxChange(e, index)}
                   className="mr-3 rounded-full ml-3"
                 />
+                {/* list item text */}
                 <label
                   className={`text ${
-                    completedItems.includes(index) ? "line-through" : ""
+                    checkedItems.includes(index) ? "line-through" : ""
                   }`}
-                  htmlFor={`checkbox-${index}`}
+                  htmlFor={`item-${index}`}
                 >
-                  <span className="text-lg ">{item}</span>
+                  {item}
                 </label>
+
                 <button
                   className="ml-auto mr-3"
                   onClick={() => handleRemoveItem(index)}
@@ -254,22 +164,22 @@ const Home = () => {
               </li>
             ))}
           </ul>
-        </div>
-        <div className="flex justify-between mx-3 my-2">
-          <div className="counter">{displayedItems.length} items left</div>
-          <button onClick={filterCheckedItems} className="text-sm">
-            Filter Checked
-          </button>
-          <button onClick={filterUncheckedItems} className="text-sm">
-            Filter Unchecked
-          </button>
-          <button onClick={displayAllItems} className="text-sm">
-            Display All
-          </button>
-          <div>
-            <button className="clear" onClick={handleClearChecked}>
-              Clear Checked
-            </button>
+          <div className="flex justify-between mx-3 my-2">
+            <div className="">{displayedItems.length} items left</div>
+            <div className="">
+              <button className="mx-2 ml-0" onClick={displayAllItems}>
+                All
+              </button>
+              <button className="mx-2" onClick={filterUncheckedItems}>
+                Active
+              </button>
+              <button className="mx-2 mr-0" onClick={filterCheckedItems}>
+                Completed
+              </button>
+            </div>
+            <div>
+              <button className="">clear completed</button>
+            </div>
           </div>
         </div>
       </div>
